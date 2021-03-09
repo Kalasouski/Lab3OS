@@ -1,3 +1,4 @@
+import com.google.gson.Gson;
 import java.util.concurrent.*;
 
 
@@ -20,12 +21,11 @@ public class RequestProcessor {
 
   public static boolean processRequest(String actionType,String data){
     AuthorizeAction action;
-    if(actionType.equals(Actions.REGISTER.toString())){
+    if(actionType.substring(1).equals(Actions.REGISTER.toString().toLowerCase())){
       action = new Registration();
-      if(action.execute(data))
-        return true;
+      boolean response = action.execute(data);
       message = action.getLastMessage();
-      return false;
+      return response;
     }
 
     return true; // temporary
@@ -37,19 +37,33 @@ public class RequestProcessor {
 
   private static class Registration implements AuthorizeAction{
 
+    private String message = "default";
+
     @Override
     public boolean execute(String data) {
+      Info info = new Gson().fromJson(data, Info.class);
 
+      if(dataBase.get(info.username)!=null){
+        message = "You are already registered";
+        return false;
+      }
+
+      dataBase.put(info.username,info.password);
+
+      message = "You are registered";
       return true;
     }
 
     @Override
     public String getLastMessage() {
-      return null;
+      return message;
     }
   }
+}
 
-
+class Info{
+  String username;
+  String password;
 }
 
 
