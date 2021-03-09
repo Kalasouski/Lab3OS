@@ -7,7 +7,7 @@ import java.net.Socket;
 
 public class Server {
 
-//  private Socket socket;
+  //  private Socket socket;
   private final ServerSocket serverSocket;
   private InputStream inputStream;
   private OutputStream outputStream;
@@ -32,7 +32,7 @@ public class Server {
 
   private void start() throws IOException {
     while (true) {
-      try(Socket socket = serverSocket.accept()){
+      try (Socket socket = serverSocket.accept()) {
         this.inputStream = socket.getInputStream();
         this.outputStream = socket.getOutputStream();
         readInput();
@@ -40,61 +40,62 @@ public class Server {
     }
   }
 
-
-
-
   private void readInput() throws IOException {
-    try(BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))){
+    try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
 
 
-    String requestType = br.readLine();
-    if(requestType==null)
-      return;
-
-
-
-    if(requestType.startsWith(String.valueOf(RequestMethods.GET))){
-
-     // String actionType = requestType.split(" ")[1];
-
-
-      //log out
-
-    }
-    else if(requestType.startsWith(String.valueOf(RequestMethods.POST))) {
-
-      String actionType = requestType.split(" ")[1];
-      if (actionType.length() <= 1) {
-        writeResponse("Error : 400"); // code error
+      String requestType = br.readLine();
+      if (requestType == null)
         return;
-      }
 
-      boolean headersFinished = false;
-      int contentLength = -1;
-      String line = "";
+      AuthorizeAction action;
 
-      while (!headersFinished) {
-        line = br.readLine();
-        if (line == null)
-          break;
-        headersFinished = line.isEmpty();
 
-        if (line.startsWith("Content-Length:")) {
-          String cl = line.substring("Content-Length:".length()).trim();
-          contentLength = Integer.parseInt(cl);
+      if (requestType.startsWith(RequestMethods.GET.toString())) {
+
+        // String actionType = requestType.split(" ")[1];
+
+
+        //log out
+
+      } else if (requestType.startsWith(RequestMethods.POST.toString())) {
+
+        String actionType = requestType.split(" ")[1];
+        if (actionType.length() <= 1) {
+          writeResponse("Error : 400"); // code error
+          return;
         }
-      }
 
-      // validate contentLength value
-      if (line != null) {
+        boolean headersFinished = false;
+        int contentLength = -1;
+        String line = "";
+
+        while (!headersFinished) {
+          line = br.readLine();
+          if (line == null)
+            break;
+          headersFinished = line.isEmpty();
+
+          if (line.startsWith("Content-Length:")) {
+            String cl = line.substring("Content-Length:".length()).trim();
+            contentLength = Integer.parseInt(cl);
+          }
+        }
+
+        // validate contentLength value
         char[] buf = new char[contentLength];  //<-- http body is here
         br.read(buf);
         System.out.println(buf);
+        RequestProcessor.processRequest(requestType,new String(buf));
+        writeResponse(RequestProcessor.getLastMessage());
+
+
+
+
+
+
+
       }
-
-      writeResponse("Bro, you just posted cringe");
-
-    }
     }
 
   }
