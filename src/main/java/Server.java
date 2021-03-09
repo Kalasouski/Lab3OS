@@ -1,15 +1,20 @@
+
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+
 public class Server {
-  private Socket socket;
-  private final InputStream inputStream;
-  private final OutputStream outputStream;
+
+//  private Socket socket;
+  private final ServerSocket serverSocket;
+  private InputStream inputStream;
+  private OutputStream outputStream;
+
 
   public static final String ERROR_STRING = "Bad request";
 
-  private static final String SECRET_MESSAGE = "SECRET MESSAGE!";
 
   String DEFAULT_RESPONSE_FORMAT = """
           HTTP/1.1 200 OK\r
@@ -20,58 +25,90 @@ public class Server {
           \r
           """;
 
-  public Server(Socket socket) throws IOException {
-    this.socket = socket;
-    this.inputStream = socket.getInputStream();
-    this.outputStream = socket.getOutputStream();
+  public Server(int port) throws IOException {
+    serverSocket = new ServerSocket(port);
+    start();
   }
 
-  public static void start() {
-    try {
-      ServerSocket serverSocket = new ServerSocket(9991);
-      while (true) {
-        Socket socket = serverSocket.accept();
-        Server server = new Server(socket);
-        server.startServer();
+  private void start() throws IOException {
+    while (true) {
+      try(Socket socket = serverSocket.accept()){
+        this.inputStream = socket.getInputStream();
+        this.outputStream = socket.getOutputStream();
+        readInput();
       }
-    } catch (IOException e) {
-      e.printStackTrace();
     }
   }
 
-  private void startServer() {
-    try {
-      readInput();
-      socket.close();
-    } catch (Throwable throwable) {
-      throwable.printStackTrace();
-    }
-  }
+
+
 
   private void readInput() throws IOException {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-    while (true) {
-      String request = reader.readLine();
-      if (request == null || request.trim().length() == 0) {
-        break;
-      }
-      if (request.startsWith("GET")) {
-        String body = request.split(" ")[1];
-        String response = process(body);
-        writeResponse(response);
-      }
+    try(BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))){
+
+
+    String requestType = br.readLine();
+    if(requestType==null)
+      return;
+
+
+
+    if(requestType.startsWith(String.valueOf(RequestMethods.GET))){
+
+     // String actionType = requestType.split(" ")[1];
+
+
+      //log out
+
     }
+    else if(requestType.startsWith(String.valueOf(RequestMethods.POST))) {
+
+      String actionType = requestType.split(" ")[1];
+      if (actionType.length() <= 1) {
+        writeResponse("Error : 400"); // code error
+        return;
+      }
+
+      boolean headersFinished = false;
+      int contentLength = -1;
+      String line = "";
+
+      while (!headersFinished) {
+        line = br.readLine();
+        if (line == null)
+          break;
+        headersFinished = line.isEmpty();
+
+        if (line.startsWith("Content-Length:")) {
+          String cl = line.substring("Content-Length:".length()).trim();
+          contentLength = Integer.parseInt(cl);
+        }
+      }
+
+      // validate contentLength value
+      if (line != null) {
+        char[] buf = new char[contentLength];  //<-- http body is here
+        br.read(buf);
+        System.out.println(buf);
+      }
+
+      writeResponse("Bro, you just posted cringe");
+
+    }
+    }
+
   }
 
 
   private void writeResponse(String responseData) throws IOException {
     String responseHeader = String.format(DEFAULT_RESPONSE_FORMAT, responseData.length());
     outputStream.write((responseHeader + responseData).getBytes());
+    // outputStream.write(responseData.getBytes());
     outputStream.flush();
   }
 
   public String process(String request) {
-    if (request.equals("/secret")) {
+   /* if (request.equals("/secret")) {
       if (!isLogined())
         return ERROR_STRING;
       return SECRET_MESSAGE;
@@ -93,11 +130,12 @@ public class Server {
 
       return "You are logouted";
 
-    } else return ERROR_STRING;
+    } else return ERROR_STRING;*/
+    return "okay";
 
   }
 
-  private boolean isLogined() {
+ /* private boolean isLogined() {
     return Authorizator.loginedClients.contains(socket.getInetAddress());
   }
 
@@ -107,5 +145,5 @@ public class Server {
 
   private boolean removeLogined() {
     return Authorizator.loginedClients.remove(socket.getInetAddress());
-  }
+  }*/
 }
