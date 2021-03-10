@@ -1,11 +1,15 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MyThread implements Runnable {
 
   final Socket socket;
   private final InputStream inputStream;
   private final OutputStream outputStream;
+
+  static int i = 0;
 
   String DEFAULT_RESPONSE_FORMAT = """
           HTTP/1.1 200 OK\r
@@ -27,6 +31,12 @@ public class MyThread implements Runnable {
 
   public void run(){
     readMessage();
+    try {
+      socket.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
 
   }
 
