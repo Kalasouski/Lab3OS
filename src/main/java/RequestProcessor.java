@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import java.util.*;
 import java.util.concurrent.*;
 
 
@@ -8,31 +9,87 @@ interface AuthorizeAction{
 }
 
 public class RequestProcessor {
-  private static ConcurrentMap<String,String> dataBase = new ConcurrentHashMap<>();
+  private static Map<String,String> dataBase = new ConcurrentHashMap<>();
+
+  private static Set<String> loginUsers = new ConcurrentSkipListSet<>();
 
   private static String message = "null";
-
 
   enum Actions{
     REGISTER, LOGIN, LOGOUT;
   }
 
+  public static boolean processRequest(String actionType){
 
-
-  public static boolean processRequest(String actionType,String data){
-    AuthorizeAction action;
-    if(actionType.substring(1).equals(Actions.REGISTER.toString().toLowerCase())){
-      action = new Registration();
-      boolean response = action.execute(data);
+    if(actionType.substring(1).startsWith(Actions.LOGOUT.toString().toLowerCase()+'?')){
+      AuthorizeAction action = new Logout();
+      boolean response = action.execute(actionType.substring(actionType.indexOf('?')+1));
       message = action.getLastMessage();
       return response;
     }
 
-    return true; // temporary
+
+    message = "Incorrect input";
+    return false;
+  }
+
+  public static boolean processRequest(String actionType,String data){
+    AuthorizeAction action;
+    if(actionType.substring(1).equals(Actions.REGISTER.toString().toLowerCase()))
+      action = new Registration();
+    else if(actionType.substring(1).equals(Actions.LOGIN.toString().toLowerCase()))
+      action = new Login();
+    else{
+      message = "Incorrect";
+      return false;
+    }
+
+
+      boolean response = action.execute(data);
+      message = action.getLastMessage();
+      return response;
+
+
+   // return true; // temporary
   }
 
   public static String getLastMessage(){
     return message;
+  }
+
+  private static class Login implements AuthorizeAction{
+
+    private String message = "default";
+
+    @Override
+    public boolean execute(String data) {
+      Info info = new Gson().fromJson(data, Info.class);
+
+      if(loginUsers.contains(info.username)){
+        message = "You are already entered";
+        return false;
+      }
+      if(dataBase.get(info.username)==null){
+        message = "You are not registered";
+        return false;
+      }
+      if(!dataBase.get(info.username).equals(info.password)){
+        message = "Incorrect password";
+        return false;
+      }
+
+      loginUsers.add(info.username);
+      message = "Correct password";
+
+
+
+      return true;
+    }
+
+    @Override
+    public String getLastMessage() {
+      return message;
+    }
   }
 
   private static class Registration implements AuthorizeAction{
@@ -59,6 +116,28 @@ public class RequestProcessor {
       return message;
     }
   }
+  private static class Logout implements AuthorizeAction{
+
+    private String message = "default";
+
+    @Override
+    public boolean execute(String userName) {
+
+      if(!loginUsers.remove(userName)){
+        message = "The account with your username is not in system or not registered";
+        return false;
+      }
+      else
+        message = "You have logged out";
+      return true;
+    }
+
+    @Override
+    public String getLastMessage() {
+      return message;
+    }
+  }
+
 }
 
 class Info{
