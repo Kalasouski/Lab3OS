@@ -1,24 +1,16 @@
+import com.google.gson.Gson;
+
 import java.io.*;
 import java.net.Socket;
 
 
-public class MyThread implements Runnable {
+public class ThreadPoolExecutor implements Runnable {
 
   final Socket socket;
   private final InputStream inputStream;
   private final OutputStream outputStream;
 
-
-  String DEFAULT_RESPONSE_FORMAT = """
-          HTTP/1.1 200 OK\r
-          Server: YarServer/2009-09-09\r
-          Content-Type: text/html\r
-          Content-Length: %d\r
-          Connection: close\r
-          \r
-          """;
-
-  public MyThread(Socket socket) throws IOException {
+  public ThreadPoolExecutor(Socket socket) throws IOException {
     this.socket = socket;
 
     inputStream = socket.getInputStream();
@@ -46,7 +38,8 @@ public class MyThread implements Runnable {
       if (requestType.startsWith(RequestMethods.GET.toString())) {
         String actionType = requestType.split(" ")[1];
         RequestProcessor.processRequest(actionType);
-        writeResponse(RequestProcessor.getLastMessage());
+        ReplyInfo reply = RequestProcessor.getLastMessage();
+        writeResponse(reply);
 
 
       } else if (requestType.startsWith(RequestMethods.POST.toString())) {
@@ -72,19 +65,42 @@ public class MyThread implements Runnable {
         char[] buf = new char[contentLength];
         br.read(buf);
         RequestProcessor.processRequest(actionType,new String(buf));
-        writeResponse(RequestProcessor.getLastMessage());
+        ReplyInfo reply = RequestProcessor.getLastMessage();
+        writeResponse(reply);
 
       }
       else{
-        writeResponse("Incorrect request type");
+        ReplyInfo reply = new ReplyInfo("400 Bad Request",new Gson().toJson(
+                new JsonMessage("Incorrect request type")));
+        writeResponse(reply);
       }
     }
     catch(IOException e){e.printStackTrace();}
   }
 
-  private void writeResponse(String responseData) throws IOException {
-    String responseHeader = String.format(DEFAULT_RESPONSE_FORMAT, responseData.length());
-    outputStream.write((responseHeader + responseData).getBytes());
+  private void writeResponse(ReplyInfo reply) throws IOException {
+
+    String DEFAULT_RESPONSE_FORMAT = "HTTP/1.1 "+reply.responseCode+'\r'+"""
+          Server: YarServer/2009-09-09
+          Content-Type: text/html
+          Content-Length: %d
+          Connection: close
+          \r                         
+          """;
+
+    String responseHeader = String.format(DEFAULT_RESPONSE_FORMAT, reply.message.length());
+    outputStream.write((responseHeader + reply.message).getBytes());
     outputStream.flush();
   }
+}
+
+class ReplyInfo {
+  final String responseCode;
+  final String message;
+  ReplyInfo(String responseCode, String message){this.responseCode = responseCode;this.message = message;}
+}
+
+class JsonMessage{
+  final String reply;
+  JsonMessage(String reply){this.reply = reply;}
 }

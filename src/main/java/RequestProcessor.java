@@ -7,7 +7,7 @@ import java.util.concurrent.*;
 
 interface AuthorizeAction{
   boolean execute(String data);
-  String getLastMessage();
+  ReplyInfo getLastMessage();
 }
 
 public class RequestProcessor {
@@ -15,7 +15,7 @@ public class RequestProcessor {
 
   private static final Set<String> loginUsers = new ConcurrentSkipListSet<>();
 
-  private static String message = "null";
+  private static ReplyInfo message = null;
 
   enum Actions{
     REGISTER, LOGIN, LOGOUT
@@ -30,8 +30,8 @@ public class RequestProcessor {
       return response;
     }
 
-
-    message = "Incorrect input";
+    message = new ReplyInfo("400 Bad Request",
+            new Gson().toJson(new JsonMessage("Incorrect request")));
     return false;
   }
 
@@ -42,7 +42,8 @@ public class RequestProcessor {
     else if(actionType.substring(1).equals(Actions.LOGIN.toString().toLowerCase()))
       action = new Login();
     else{
-      message = "Incorrect";
+      message = new ReplyInfo("400 Bad Request",
+              new Gson().toJson(new JsonMessage("Incorrect request")));
       return false;
     }
 
@@ -52,107 +53,115 @@ public class RequestProcessor {
       return response;
   }
 
-  public static String getLastMessage(){
+  public static ReplyInfo getLastMessage(){
     return message;
   }
 
   private static class Login implements AuthorizeAction{
 
-    private String message;
+    private ReplyInfo message;
 
     @Override
     public boolean execute(String data) {
 
-      Info info = null;
+      RegInfo regInfo = null;
       try{
-         info = new Gson().fromJson(data, Info.class);
-        if(info==null || info.username==null || info.password == null)
+         regInfo = new Gson().fromJson(data, RegInfo.class);
+        if(regInfo ==null || regInfo.username==null || regInfo.password == null)
           throw new JsonSyntaxException("");
       }
       catch(JsonSyntaxException e){
-        message = "Error when parsing Json";
+        message = new ReplyInfo("400 Bad Request",
+                new Gson().toJson(new JsonMessage("Error when parsing Json")));
         return false;
       }
 
 
 
 
-      if(loginUsers.contains(info.username)){
-        message = "You are already entered";
+      if(loginUsers.contains(regInfo.username)){
+        message = new ReplyInfo("400 Bad Request",
+                new Gson().toJson(new JsonMessage("You have already entered")));
         return false;
       }
-      if(dataBase.get(info.username)==null){
-        message = "You are not registered";
+      if(dataBase.get(regInfo.username)==null){
+        message = new ReplyInfo("400 Bad Request",
+                new Gson().toJson(new JsonMessage("You are not registered")));
         return false;
       }
-      if(!dataBase.get(info.username).equals(info.password)){
-        message = "Incorrect password";
+      if(!dataBase.get(regInfo.username).equals(regInfo.password)){
+        message = new ReplyInfo("400 Bad Request",
+                new Gson().toJson(new JsonMessage("Incorrect password")));
         return false;
       }
 
-      loginUsers.add(info.username);
-      message = "Correct password";
-
-
-
+      loginUsers.add(regInfo.username);
+      message = new ReplyInfo("200 OK",
+              new Gson().toJson(new JsonMessage("Correct password")));
       return true;
     }
 
     @Override
-    public String getLastMessage() {
+    public ReplyInfo getLastMessage() {
       return message;
     }
   }
 
   private static class Registration implements AuthorizeAction{
 
-    private String message;
+    private ReplyInfo message;
 
     @Override
     public boolean execute(String data) {
-      Info info = new Gson().fromJson(data, Info.class);
+      RegInfo regInfo = new Gson().fromJson(data, RegInfo.class);
 
-      if(dataBase.get(info.username)!=null){
-        message = "You are already registered";
+      if(dataBase.get(regInfo.username)!=null){
+        message = new ReplyInfo("400 Bad Request",
+                new Gson().toJson(new JsonMessage("You are already registered")));
         return false;
       }
 
-      dataBase.put(info.username,info.password);
+      dataBase.put(regInfo.username, regInfo.password);
 
-      message = "You are registered";
+      message = new ReplyInfo("200 OK",new Gson().toJson(new JsonMessage("You are registered")));
       return true;
     }
 
     @Override
-    public String getLastMessage() {
+    public ReplyInfo getLastMessage() {
       return message;
     }
   }
   private static class Logout implements AuthorizeAction{
 
-    private String message;
+    private ReplyInfo message;
 
     @Override
     public boolean execute(String userName) {
 
       if(!loginUsers.remove(userName)){
-        message = "The account with your username is not in system or not registered";
+        message = new ReplyInfo("400 Bad Request",
+                new Gson().toJson(
+                        new JsonMessage("The account with your username is not in system or not registered")));
         return false;
       }
       else
-        message = "You have logged out";
+        message = new ReplyInfo("200 OK",
+                new Gson().toJson(new JsonMessage("You have logged out")));
       return true;
     }
 
     @Override
-    public String getLastMessage() {
+    public ReplyInfo getLastMessage() {
       return message;
     }
   }
 
 }
 
-class Info{ String username, password;}
+class RegInfo { String username, password;}
+
+
 
 
 

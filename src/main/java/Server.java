@@ -7,9 +7,8 @@ import java.util.concurrent.*;
 public class Server{
   private final ServerSocket serverSocket;
 
-  ExecutorService pool = Executors.newCachedThreadPool();
+  ExecutorService pool = Executors.newFixedThreadPool(10);
 
-  boolean isOn = true;
 
   public Server(int port) throws IOException {
     serverSocket = new ServerSocket(port);
@@ -19,12 +18,8 @@ public class Server{
 
   void startServer() throws IOException {
     while (true) {
-      MyThread req = new MyThread(serverSocket.accept());
+      ThreadPoolExecutor req = new ThreadPoolExecutor(serverSocket.accept());
       pool.execute(req);
       }
-  }
-
-  void serverShutDown(){
-    isOn = false;
   }
 }
