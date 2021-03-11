@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.HashSet;
-import java.util.Set;
+
 
 public class MyThread implements Runnable {
 
@@ -9,7 +8,6 @@ public class MyThread implements Runnable {
   private final InputStream inputStream;
   private final OutputStream outputStream;
 
-  static int i = 0;
 
   String DEFAULT_RESPONSE_FORMAT = """
           HTTP/1.1 200 OK\r
@@ -27,8 +25,7 @@ public class MyThread implements Runnable {
     outputStream = socket.getOutputStream();
   }
 
-
-
+  @Override
   public void run(){
     readMessage();
     try {
@@ -46,7 +43,6 @@ public class MyThread implements Runnable {
       if (requestType == null)
         return;
 
-      AuthorizeAction action;
       if (requestType.startsWith(RequestMethods.GET.toString())) {
         String actionType = requestType.split(" ")[1];
         RequestProcessor.processRequest(actionType);
@@ -59,7 +55,7 @@ public class MyThread implements Runnable {
 
         boolean headersFinished = false;
         int contentLength = -1;
-        String line = "";
+        String line;
 
         while (!headersFinished) {
           line = br.readLine();
@@ -73,8 +69,7 @@ public class MyThread implements Runnable {
           }
         }
 
-        // validate contentLength value
-        char[] buf = new char[contentLength];  //<-- http body is here
+        char[] buf = new char[contentLength];
         br.read(buf);
         RequestProcessor.processRequest(actionType,new String(buf));
         writeResponse(RequestProcessor.getLastMessage());
@@ -84,7 +79,7 @@ public class MyThread implements Runnable {
         writeResponse("Incorrect request type");
       }
     }
-    catch(IOException e){System.out.println(e);}
+    catch(IOException e){e.printStackTrace();}
   }
 
   private void writeResponse(String responseData) throws IOException {

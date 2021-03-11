@@ -1,4 +1,6 @@
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -9,14 +11,14 @@ interface AuthorizeAction{
 }
 
 public class RequestProcessor {
-  private static Map<String,String> dataBase = new ConcurrentHashMap<>();
+  private static final Map<String,String> dataBase = new ConcurrentHashMap<>();
 
-  private static Set<String> loginUsers = new ConcurrentSkipListSet<>();
+  private static final Set<String> loginUsers = new ConcurrentSkipListSet<>();
 
   private static String message = "null";
 
   enum Actions{
-    REGISTER, LOGIN, LOGOUT;
+    REGISTER, LOGIN, LOGOUT
   }
 
   public static boolean processRequest(String actionType){
@@ -48,9 +50,6 @@ public class RequestProcessor {
       boolean response = action.execute(data);
       message = action.getLastMessage();
       return response;
-
-
-   // return true; // temporary
   }
 
   public static String getLastMessage(){
@@ -59,11 +58,24 @@ public class RequestProcessor {
 
   private static class Login implements AuthorizeAction{
 
-    private String message = "default";
+    private String message;
 
     @Override
     public boolean execute(String data) {
-      Info info = new Gson().fromJson(data, Info.class);
+
+      Info info = null;
+      try{
+         info = new Gson().fromJson(data, Info.class);
+        if(info==null || info.username==null || info.password == null)
+          throw new JsonSyntaxException("");
+      }
+      catch(JsonSyntaxException e){
+        message = "Error when parsing Json";
+        return false;
+      }
+
+
+
 
       if(loginUsers.contains(info.username)){
         message = "You are already entered";
@@ -94,7 +106,7 @@ public class RequestProcessor {
 
   private static class Registration implements AuthorizeAction{
 
-    private String message = "default";
+    private String message;
 
     @Override
     public boolean execute(String data) {
@@ -118,7 +130,7 @@ public class RequestProcessor {
   }
   private static class Logout implements AuthorizeAction{
 
-    private String message = "default";
+    private String message;
 
     @Override
     public boolean execute(String userName) {
@@ -140,10 +152,7 @@ public class RequestProcessor {
 
 }
 
-class Info{
-  String username;
-  String password;
-}
+class Info{ String username, password;}
 
 
 
