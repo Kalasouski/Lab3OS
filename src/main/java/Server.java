@@ -6,20 +6,15 @@ import java.util.concurrent.*;
 
 public class Server{
   private final ServerSocket serverSocket;
-
-  ExecutorService pool = Executors.newFixedThreadPool(10);
-
+  private final ExecutorService pool = Executors.newFixedThreadPool(10);
 
   public Server(int port) throws IOException {
     serverSocket = new ServerSocket(port);
     startServer();
   }
 
-
   void startServer() throws IOException {
-    while (true) {
-      ThreadPoolExecutor req = new ThreadPoolExecutor(serverSocket.accept());
-      pool.execute(req);
-      }
+    while (true)
+      pool.execute(new ThreadPoolExecutor(serverSocket.accept()));
   }
 }

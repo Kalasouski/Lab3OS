@@ -64,7 +64,7 @@ public class RequestProcessor {
     @Override
     public boolean execute(String data) {
 
-      RegInfo regInfo = null;
+      RegInfo regInfo;
       try{
          regInfo = new Gson().fromJson(data, RegInfo.class);
         if(regInfo ==null || regInfo.username==null || regInfo.password == null)
@@ -75,9 +75,6 @@ public class RequestProcessor {
                 new Gson().toJson(new JsonMessage("Error when parsing Json")));
         return false;
       }
-
-
-
 
       if(loginUsers.contains(regInfo.username)){
         message = new ReplyInfo("400 Bad Request",

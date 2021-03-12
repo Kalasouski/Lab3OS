@@ -1,32 +1,23 @@
 import com.google.gson.Gson;
-
 import java.io.*;
 import java.net.Socket;
 
 
 public class ThreadPoolExecutor implements Runnable {
 
-  final Socket socket;
+  private final Socket socket;
   private final InputStream inputStream;
   private final OutputStream outputStream;
 
   public ThreadPoolExecutor(Socket socket) throws IOException {
     this.socket = socket;
-
-    inputStream = socket.getInputStream();
-    outputStream = socket.getOutputStream();
+    this.inputStream = socket.getInputStream();
+    this.outputStream = socket.getOutputStream();
   }
 
   @Override
   public void run(){
     readMessage();
-    try {
-      socket.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-
   }
 
   private void readMessage() {
@@ -74,21 +65,23 @@ public class ThreadPoolExecutor implements Runnable {
                 new JsonMessage("Incorrect request type")));
         writeResponse(reply);
       }
+      socket.close();
     }
     catch(IOException e){e.printStackTrace();}
   }
 
   private void writeResponse(ReplyInfo reply) throws IOException {
 
-    String DEFAULT_RESPONSE_FORMAT = "HTTP/1.1 "+reply.responseCode+'\r'+"""
-          Server: YarServer/2009-09-09
-          Content-Type: text/html
-          Content-Length: %d
-          Connection: close
-          \r                         
-          """;
+    String DEFAULT_RESPONSE_FORMAT = """ 
+            HTTP/1.1 %s     
+            Server: YarServer/2009-09-09
+            Content-Type: text/html
+            Content-Length: %d
+            Connection: close
+            \r                         
+            """;
 
-    String responseHeader = String.format(DEFAULT_RESPONSE_FORMAT, reply.message.length());
+    String responseHeader = String.format(DEFAULT_RESPONSE_FORMAT,reply.responseCode, reply.message.length());
     outputStream.write((responseHeader + reply.message).getBytes());
     outputStream.flush();
   }
