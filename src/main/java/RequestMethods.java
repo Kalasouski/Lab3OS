@@ -1,3 +1,3 @@
 public enum RequestMethods {
-  GET, POST;
+    GET, POST;
 }
