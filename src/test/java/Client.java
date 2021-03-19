@@ -2,31 +2,38 @@ import java.net.URI;
 import java.net.http.*;
 
 public class Client {
-    static String requestData = "{\"username\" : \"user\", \"password\" : \"69\"}";
+    static String requestData ="{\"username\" : \"user\", \"password\" : \"69\"}";
 
-    private final static HttpClient httpClient = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_2)
             .build();
 
     public static void main(String[] args) throws Exception {
 
-        System.out.println("Testing 1 - Send Http POST request: register");
-        printResponse(sendPostRegister(requestData));
+        Client obj = new Client();
 
-        System.out.println("Testing 2 - Send Http POST request: login\nShould be: OK");
-        printResponse(sendPostLogin(requestData));
+        try {
 
-        System.out.println("Testing 3 - Send Http GET request: logout\nShould be: OK");
-        printResponse(sendGetLogout());
+            System.out.println("Testing 1 - Send Http POST request: register");
+            assert(printResponse(obj.sendPostRegister(requestData)) == 200);
 
-        System.out.println("Testing 4 - Send Http POST request: register\nWhen registered\nShould be: Not OK");
-        printResponse(sendPostRegister(requestData));
+            System.out.println("Testing 2 - Send Http POST request: login\n");
+            assert (printResponse(obj.sendPostLogin(requestData))==200);
 
-        System.out.println("Testing 5 - Send Http GET request: logout\nWhen not logged in\nShould be: Not OK");
-        printResponse(sendGetLogout());
+            System.out.println("Testing 3 - Send Http GET request: logout\n");
+            assert(printResponse(obj.sendGetLogout())==200);
+
+            System.out.println("Testing 4 - Send Http POST request: register\nWhen registered\n");
+            assert (printResponse(obj.sendPostRegister(requestData))==400);
+
+            System.out.println("Testing 5 - Send Http GET request: logout\nWhen not logged in\n");
+            assert (printResponse(obj.sendGetLogout())==400);
+        }catch (AssertionError e) {
+            System.out.println("Not OK: Assertion error");
+        }
     }
 
-    private static HttpResponse<String> sendGetLogout() throws Exception {
+    public HttpResponse<String> sendGetLogout() throws Exception {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .GET()
@@ -39,20 +46,14 @@ public class Client {
         return response;
     }
 
-    public static void printResponse(HttpResponse<String> response) {
-        // print status code
-        if (response.statusCode() == 200)
-            System.out.println("OK");
-        else
-            System.out.println("Not OK: " + response.statusCode());
+    public static int printResponse(HttpResponse<String> response){
 
-        // print response body
-        System.out.println(response.body());
+        // print response
+        System.out.println(response.statusCode()+"\n"+response.body());
+        return response.statusCode();
     }
 
-    private static HttpResponse<String> sendPostLogin(String input) throws Exception {
-
-        // form parameters
+    public HttpResponse<String>  sendPostLogin(String input) throws Exception {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(input))
@@ -66,9 +67,7 @@ public class Client {
         return response;
     }
 
-    private static HttpResponse<String> sendPostRegister(String input) throws Exception {
-
-        // form parameters
+    public HttpResponse<String>  sendPostRegister(String input) throws Exception {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(input))

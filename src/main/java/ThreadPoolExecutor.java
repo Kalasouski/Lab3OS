@@ -61,7 +61,7 @@ public class ThreadPoolExecutor implements Runnable {
                 writeResponse(reply);
 
             } else {
-                ReplyInfo reply = new ReplyInfo("400 Bad Request", new Gson().toJson(
+                ReplyInfo reply = new ReplyInfo(400, new Gson().toJson(
                         new JsonMessage("Incorrect request type")));
                 writeResponse(reply);
             }
@@ -74,7 +74,7 @@ public class ThreadPoolExecutor implements Runnable {
     private void writeResponse(ReplyInfo reply) throws IOException {
 
         String DEFAULT_RESPONSE_FORMAT = """ 
-                HTTP/1.1 %s     
+                HTTP/1.1 %d     
                 Server: YarServer/2009-09-09
                 Content-Type: text/html
                 Content-Length: %d
@@ -89,10 +89,10 @@ public class ThreadPoolExecutor implements Runnable {
 }
 
 class ReplyInfo {
-    final String responseCode;
+    final int responseCode;
     final String message;
 
-    ReplyInfo(String responseCode, String message) {
+    ReplyInfo(int responseCode, String message) {
         this.responseCode = responseCode;
         this.message = message;
     }
