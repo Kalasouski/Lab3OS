@@ -13,6 +13,7 @@ public class Info {
 
 
     public static String getInfo(){
+
         return "The factorial of 100 is: "+ factorial(100).toString();
     }
 
