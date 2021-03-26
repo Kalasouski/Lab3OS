@@ -1,3 +1,5 @@
+package handler;
+
 import com.google.gson.Gson;
 
 import java.io.*;
@@ -15,27 +17,24 @@ public class ClientHandler {
         this.outputStream = socket.getOutputStream();
     }
 
-    public void readMessage(){
+    public void readMessage() {
 
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))){
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
             String firstLine = br.readLine();
-            if(firstLine==null)
+            if (firstLine == null)
                 return;
-            if(firstLine.startsWith("POST"))
-                POSTRequestHandler(firstLine,br);
+            if (firstLine.startsWith("POST"))
+                POSTRequestHandler(firstLine, br);
             else
                 writeResponse(new String[]{"400", new Gson().toJson(new JsonMessage("Incorrect request type"))});
 
 
-        }
-        catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-
-
-    private void POSTRequestHandler(String message,BufferedReader br) throws IOException{
+    private void POSTRequestHandler(String message, BufferedReader br) throws IOException {
         String actionType = message.split(" ")[1];
 
         boolean headersFinished = false;
@@ -53,16 +52,15 @@ public class ClientHandler {
             }
         }
         char[] buf = new char[contentLength];
-        if(br.read(buf)==-1){
+        if (br.read(buf) == -1) {
             //error
         }
         String body = new String(buf);
 
-        String[] resultMessage = RequestProcessor.processRequest(actionType,body);
+        String[] resultMessage = RequestProcessor.processRequest(actionType, body);
 
         writeResponse(resultMessage);
     }
-
 
 
     private void writeResponse(String[] resultMessage) throws IOException {
@@ -75,8 +73,8 @@ public class ClientHandler {
                 \r                         
                 """;
 
-        String responseHeader = String.format(DEFAULT_RESPONSE_FORMAT,resultMessage[0],resultMessage[1].length());
-        outputStream.write((responseHeader+resultMessage[1]).getBytes());
+        String responseHeader = String.format(DEFAULT_RESPONSE_FORMAT, resultMessage[0], resultMessage[1].length());
+        outputStream.write((responseHeader + resultMessage[1]).getBytes());
         outputStream.flush();
     }
 

@@ -1,3 +1,7 @@
+package launcher;
+
+import handler.ClientHandler;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -14,24 +18,19 @@ public class AuthorizationServer {
     public void startServer() throws ExecutionException, InterruptedException {
         final ExecutorService clientPool = Executors.newCachedThreadPool();
 
-        while(!serverSocket.isClosed()){
-            Future<Socket> future = clientPool.submit(() ->{
+        while (!serverSocket.isClosed()) {
+            Future<Socket> future = clientPool.submit(() -> {
                 Socket socket = serverSocket.accept();
-                System.out.println(socket);
                 new ClientHandler(socket).readMessage();
-
                 return socket;
             });
             activeClients.add(future.get());
         }
-
-
     }
 
     public void stopServer() throws IOException {
         serverSocket.close();
-        for(Socket socket : activeClients)
+        for (Socket socket : activeClients)
             socket.close();
-
     }
 }

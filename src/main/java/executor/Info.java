@@ -1,3 +1,5 @@
+package executor;
+
 import java.math.BigInteger;
 
 public class Info {
@@ -10,11 +12,8 @@ public class Info {
         return factorial;
     }
 
-
-
-    public static String getInfo(){
-
-        return "The factorial of 100 is: "+ factorial(100).toString();
+    public static String getInfo() {
+        return "The factorial of 100 is: " + factorial(100).toString();
     }
 
 
